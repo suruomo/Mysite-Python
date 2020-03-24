@@ -3,7 +3,7 @@ from django.shortcuts import get_object_or_404,render
 from .models import Question,Choice
 from django.urls import reverse
 from django.views import generic
-
+from django.utils import timezone
 # 问题索引视图
 # ListView通用视图显示一个对象列表
 class IndexView(generic.ListView):
@@ -11,8 +11,8 @@ class IndexView(generic.ListView):
     context_object_name = 'latest_question_list'
 
     def get_queryset(self):
-        """Return the last five published questions."""
-        return Question.objects.order_by('-pub_date')[:5]
+        # 过滤日期不显示将来时间
+        return Question.objects.filter(pub_date__lte=timezone.now()).order_by('-pub_date')[:5]
 
 # 问题详情视图
 # DetailView视图显示一个对象的详细信息界面

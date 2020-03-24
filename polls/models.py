@@ -7,6 +7,11 @@ class Question(models.Model):
     question_text = models.CharField(max_length=200)
     # 出版日期
     pub_date = models.DateTimeField('date published')
+    # 判断是否为最近一天内发布的
+    def was_published_recently(self):
+        now = timezone.now()
+        # 只在日期为过去时返回True
+        return now - datetime.timedelta(days=1) <= self.pub_date <= now
 
     def __str__(self):
         return self.question_text
