@@ -1,44 +1,47 @@
-from django.http import HttpResponse
-from django.template import loader
-from django.http import Http404
+from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404,render
-from .models import Question
+from .models import Question,Choice
+from django.urls import reverse
+from django.views import generic
 
+# 问题索引视图
+# ListView通用视图显示一个对象列表
+class IndexView(generic.ListView):
+    template_name = 'polls/index.html'
+    context_object_name = 'latest_question_list'
 
-# 视图
-# 问题索引页
-def index(request):
-    # 按日期查找最新5条记录
-    latest_question_list = Question.objects.order_by('-pub_date')[:5]
-    # 加载视图模板
-    template = loader.get_template('polls/index.html')
-    # 上下文对象：字典类型
-    context = {
-        'latest_question_list': latest_question_list,
-    }
-    # render()载入模板，填充上下文，再返回由它生成的HttpResponse对象
-    return HttpResponse(template.render(context, request))
+    def get_queryset(self):
+        """Return the last five published questions."""
+        return Question.objects.order_by('-pub_date')[:5]
 
+# 问题详情视图
+# DetailView视图显示一个对象的详细信息界面
+class DetailView(generic.DetailView):
+    # 视图作用模型，由model提供
+    model = Question
+    template_name = 'polls/detail.html'
 
-# 投票详情页
-def detail(request, question_id):
-    # try:
-    #     question = Question.objects.get(pk=question_id)
-    # except Question.DoesNotExist:
-    #     raise Http404("Question does not exist")
-    # return render(request, 'polls/detail.html', {'question': question})
-    # 按问题id查找问题详情
-    # 若找不到则抛出异常，返回404
-    question = get_object_or_404(Question, pk=question_id)
-    return render(request, 'polls/detail.html', {'question': question})
-
-
-# 投票结果
-def results(request, question_id):
-    response = "You're looking at the results of question %s."
-    return HttpResponse(response % question_id)
-
+# 投票结果视图
+class ResultsView(generic.DetailView):
+    model = Question
+    template_name = 'polls/results.html'
 
 # 投票处理
 def vote(request, question_id):
-    return HttpResponse("You're voting on question %s." % question_id)
+    question = get_object_or_404(Question, pk=question_id)
+    try:
+        # request.POST是一个类字典对象
+        # 通过关键字获取提交Choice的id,字符串格式
+        selected_choice = question.choice_set.get(pk=request.POST['choice'])
+        # 若该问题中找不到choice的id抛出异常
+    except (KeyError, Choice.DoesNotExist):
+        return render(request, 'polls/detail.html', {
+            'question': question,
+            'error_message': "You didn't select a choice.",
+        })
+    else:
+        # 若找到了则该选项的投票数加1
+        selected_choice.votes += 1
+        selected_choice.save()
+        # 将请求重定向到Question的结果界面
+        return HttpResponseRedirect(reverse('polls:results', args=(question.id,)))
