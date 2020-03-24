@@ -1,6 +1,10 @@
 from django.http import HttpResponse
 from django.template import loader
+from django.http import Http404
+from django.shortcuts import get_object_or_404,render
 from .models import Question
+
+
 # 视图
 # 问题索引页
 def index(request):
@@ -8,18 +12,33 @@ def index(request):
     latest_question_list = Question.objects.order_by('-pub_date')[:5]
     # 加载视图模板
     template = loader.get_template('polls/index.html')
+    # 上下文对象：字典类型
     context = {
         'latest_question_list': latest_question_list,
     }
     # render()载入模板，填充上下文，再返回由它生成的HttpResponse对象
     return HttpResponse(template.render(context, request))
+
+
 # 投票详情页
 def detail(request, question_id):
-    return HttpResponse("You're looking at question %s." % question_id)
+    # try:
+    #     question = Question.objects.get(pk=question_id)
+    # except Question.DoesNotExist:
+    #     raise Http404("Question does not exist")
+    # return render(request, 'polls/detail.html', {'question': question})
+    # 按问题id查找问题详情
+    # 若找不到则抛出异常，返回404
+    question = get_object_or_404(Question, pk=question_id)
+    return render(request, 'polls/detail.html', {'question': question})
+
+
 # 投票结果
 def results(request, question_id):
     response = "You're looking at the results of question %s."
     return HttpResponse(response % question_id)
+
+
 # 投票处理
 def vote(request, question_id):
     return HttpResponse("You're voting on question %s." % question_id)

@@ -2,6 +2,7 @@ from django.urls import path
 
 from . import views
 # 视图映射
+app_name = 'polls'  # 设置命名空间，防止和其他应用重名
 urlpatterns = [
     # ex: /polls/
     path('', views.index, name='index'),
